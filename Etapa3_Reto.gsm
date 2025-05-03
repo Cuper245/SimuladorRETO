@@ -1,0 +1,56 @@
+org 0x000
+	jmp main
+
+	data
+	display7seg:    bss 1
+	swybotones:     bss 1
+	LEDrojo:        bss 1
+	LEDverde:       bss 1
+	contador_recibido: bss 1
+	uart_out: 		bss 1
+	led_verde_recibido: bss 1
+	led_rojo_recibido: bss 1
+
+			text
+			org 0x010
+; Initialize
+main:	sub r0, r0, r0 
+		ldm r1, 0              ; contador inicial en r1
+        stm r1, contador_recibido
+        out r1, display7seg     ; clear r0
+
+; Bucle principal
+; Leer botones y switches
+loop: inp r3, 0x02
+
+	; Enviar botones por UART
+	out r3, uart_out
+
+	; Leer contador recibido desde la FPGA (a través del puerto 'counter')
+	inp r4, 0x04
+	out r4, display7seg   ; Mostrar contador en el display de 7 segmentos
+
+	; Leer estado de los LEDs recibido desde la FPGA (a través del puerto 'LEDverde' y 'LEDrojo')
+	inp r5, led_verde_recibido ; Guardar estado del LED verde
+	out r5, LEDverde      ; Actualizar LED verde
+
+	inp r6, led_rojo_recibido    ; Guardar estado del LED rojo
+	out r6, LEDrojo       ; Actualizar LED rojo
+
+	jsb delay
+	
+	jmp loop
+	
+delay:		add r7, r0, 0
+again3: 	add r6, r0, 0
+again2: 	add r5, r0, 0
+again1: 	add r5, r5, 1
+			sub r0, r5, 0xFF
+			bnz again1
+			add r6, r6, 1
+			sub r0, r6, 0xFF
+			bnz again2
+			add r7, r7, 1
+			sub r0, r7, 0x1C
+			bnz again3
+			ret	
